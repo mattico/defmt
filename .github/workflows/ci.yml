@@ -57,8 +57,10 @@ jobs:
         toolchain: stable
         override: true
         target: ${{ env.NO_STD_TARGET }}
-    - name: Install dependencies ## todo cache them
-      run: sudo apt-get update && sudo apt-get install qemu
+    - name: Install dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install qemu
+        rustup +stable target add ${{ env.NO_STD_TARGET }}
     - name: Build QEMU examples
       working-directory: firmware/qemu
       run: cargo build --verbose --target ${{ env.NO_STD_TARGET }} --bins
