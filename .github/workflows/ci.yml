@@ -66,6 +66,7 @@ jobs:
     - name: Run QEMU examples
       working-directory: firmware/qemu
       run: |
+        qemu-system-arm --version
         ls /home/runner/work/defmt/defmt/target/thumbv7em-none-eabi/debug
         cargo run --target ${{ env.NO_STD_TARGET }} --bin log
 #        cargo rb log
