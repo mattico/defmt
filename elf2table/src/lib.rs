@@ -10,11 +10,13 @@ use std::{
 use anyhow::{anyhow, bail, ensure};
 pub use defmt_decoder::Table;
 use object::{Object, ObjectSection};
+use log::*;
 
 /// Parses an ELF file and returns the decoded `defmt` table
 ///
 /// This function returns `None` if the ELF file contains no `.defmt` section
 pub fn parse(elf: &[u8]) -> Result<Option<Table>, anyhow::Error> {
+    println!("parse()");
     let elf = object::File::parse(elf)?;
     // find the index of the `.defmt` section
     let defmt_shndx = if let Some(section) = elf.section_by_name(".defmt") {
@@ -113,6 +115,7 @@ impl fmt::Debug for Location {
 pub type Locations = BTreeMap<u64, Location>;
 
 pub fn get_locations(elf: &[u8], table: &Table) -> Result<Locations, anyhow::Error> {
+    println!("get_locations()");
     let live_syms = table.symbols().collect::<Vec<_>>();
     let object = object::File::parse(elf)?;
     let endian = if object.is_little_endian() {
@@ -229,12 +232,15 @@ pub fn get_locations(elf: &[u8], table: &Table) -> Result<Locations, anyhow::Err
                     Some(loc),
                 ) = (name, linkage_name, decl_file, decl_line, location)
                 {
+                    println!("found match?");
                     let name_slice = dwarf.string(name_index)?;
                     let name = core::str::from_utf8(&name_slice)?;
                     let linkage_name_slice = dwarf.string(linkage_name_index)?;
                     let linkage_name = core::str::from_utf8(&linkage_name_slice)?;
+                    println!("MATCH? name={} linkage_name={}", name, linkage_name);
 
                     if name == "DEFMT_LOG_STATEMENT" {
+                        println!("found defmt log statement");
                         // remove the `@` suffix
                         let linkage_name = linkage_name
                             .splitn(2, '@')
@@ -242,6 +248,7 @@ pub fn get_locations(elf: &[u8], table: &Table) -> Result<Locations, anyhow::Err
                             .ok_or_else(|| anyhow!("{} is missing `@` suffix", linkage_name))?;
 
                         if live_syms.contains(&linkage_name) {
+                            println!("live sym: {}", name);
                             let addr = exprloc2address(unit.encoding(), &loc)?;
                             let file = file_index_to_path(file_index, &unit, &dwarf)?;
                             let module = segments.join("::");
@@ -252,6 +259,7 @@ pub fn get_locations(elf: &[u8], table: &Table) -> Result<Locations, anyhow::Err
                                 bail!("BUG in DWARF variable filter: index collision for addr 0x{:08x} (old = {:?}, new = {:?})", addr, old, loc);
                             }
                         } else {
+                            println!("GCd sym: {}", name);
                             // this symbol was GC-ed by the linker (but remains in the DWARF info)
                             // so we discard it (its `addr` info is also wrong which causes collisions)
                         }

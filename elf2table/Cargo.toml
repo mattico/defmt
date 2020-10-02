@@ -9,6 +9,7 @@ version = "0.1.0"
 anyhow = "1.0.32"
 defmt-decoder = { path = "../decoder" }
 gimli = "0.22.0"
+log = "*"
 
 [dependencies.object]
 version = "0.21.0"
