@@ -20,7 +20,7 @@ use cortex_m::{interrupt, register};
 
 // TODO make configurable
 // NOTE use a power of 2 for best performance
-const SIZE: usize = 1024;
+const SIZE: usize = 1024 * 10;
 
 #[defmt::global_logger]
 struct Logger;
