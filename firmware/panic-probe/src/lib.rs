@@ -57,6 +57,8 @@ mod imp {
 
         print(info);
 
+        asm::delay(480_000_000 / 4);
+
         // Trigger a `HardFault` via `udf` instruction.
 
         // If `UsageFault` is enabled, we disable that first, since otherwise `udf` will cause that
