@@ -84,15 +84,25 @@ struct Channel {
     flags: AtomicUsize,
 }
 
+const TRACE_FINISHED: usize = 8;
+const TRACE_STARTED: usize = 4;
 const BLOCK_IF_FULL: usize = 2;
 const NOBLOCK_TRIM: usize = 1;
 
 impl Channel {
+    fn start_trace(&self) {
+        self.flags.fetch_or(TRACE_STARTED, Ordering::Relaxed);
+    }
+
+    fn finish_trace(&self) {
+        self.flags.fetch_or(TRACE_FINISHED, Ordering::Relaxed);
+    }
+
     fn write_all(&self, mut bytes: &[u8]) {
         // NOTE `flags` is modified by the host after RAM initialization while the device is halted
         // it cannot otherwise be modified so we don't need to check its state more often than
         // just here
-        if self.flags.load(Ordering::Relaxed) == BLOCK_IF_FULL {
+        if self.flags.load(Ordering::Relaxed) & BLOCK_IF_FULL != 0 {
             while !bytes.is_empty() {
                 let consumed = self.blocking_write(bytes);
                 if consumed != 0 {
@@ -204,4 +214,14 @@ unsafe fn handle() -> &'static Channel {
     static NAME: &[u8] = b"defmt\0";
 
     &_SEGGER_RTT.up_channel
+}
+
+pub fn start_trace() {
+    let handle = unsafe { handle() };
+    handle.start_trace();
+}
+
+pub fn finish_trace() {
+    let handle = unsafe { handle() };
+    handle.finish_trace();
 }
