@@ -20,7 +20,10 @@ use cortex_m::{interrupt, register};
 
 // TODO make configurable
 // NOTE use a power of 2 for best performance
+#[cfg(not(feature = "trace-buffer"))]
 const SIZE: usize = 1024;
+#[cfg(feature = "trace-buffer")]
+const SIZE: usize = 1024 * 512;
 
 #[defmt::global_logger]
 struct Logger;
@@ -193,8 +196,9 @@ unsafe fn handle() -> &'static Channel {
         },
     };
 
-    #[cfg_attr(target_os = "macos", link_section = ".uninit,defmt-rtt.BUFFER")]
-    #[cfg_attr(not(target_os = "macos"), link_section = ".uninit.defmt-rtt.BUFFER")]
+    #[cfg_attr(all(not(feature = "trace-buffer"), target_os = "macos"), link_section = ".uninit,defmt-rtt.BUFFER")]
+    #[cfg_attr(all(not(feature = "trace-buffer"), not(target_os = "macos")), link_section = ".uninit.defmt-rtt.BUFFER")]
+    #[cfg_attr(feature = "trace-buffer", link_section = ".axisram.defmt-rtt.BUFFER")]
     static mut BUFFER: [u8; SIZE] = [0; SIZE];
 
     static NAME: &[u8] = b"defmt\0";
