@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "defmt-buffer",
   "defmt-itm",
   "defmt-rtt",
   "defmt-semihosting",
